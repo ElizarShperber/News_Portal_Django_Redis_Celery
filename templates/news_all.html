@@ -1,0 +1,68 @@
+{% extends 'default.html' %}
+{% load tz %}
+{% load custom_filters %}
+{% block content %}
+    <style>
+        body {background-color: {% if current_time.hour >= 19 or current_time.hour <= 7 %} darkcyan {% else %} powderblue {% endif %};}
+    </style>
+
+   {% get_current_timezone as TIME_ZONE %}
+    <form action="" method="POST">
+        {% csrf_token %}
+        <label for="timezone">Time zone:</label>
+        <select name="timezone">
+            {% for tz in timezones %}
+            <option value="{{ tz }}"{% if tz == TIME_ZONE %} selected{% endif %}>{{ tz }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Set">
+    </form>
+
+    {{ TIME_ZONE }}
+    {{ current_time|timezone:TIME_ZONE }} <!-- Отображаем время в выбранном часовом поясе  -->
+
+<p class="div">Количество постов {{ posts |length  }}</p>
+
+
+
+{% for post in posts %}
+
+
+<div class="">
+      <p>  {{ post.date_time_create|date:'M d Y' }}</p>
+<h2><a href="{% url 'news_single' post.pk %}">{{ post.title | censor }}</a></h2>
+  <p>{{ post.body|truncatewords:20 | censor   }}</p>
+</div>
+{% endfor %}
+
+
+
+<!-- Проверяем, что поддерживается постраничный вывод -->
+{% if is_paginated %}
+
+    <!-- Если доступна предыдущая страница, то даём ссылку на неё и самую первую страницу -->
+    {% if page_obj.has_previous %}
+        <a href="?page=1">First</a>
+        <a href="?page={{ page_obj.previous_page_number }}"><<<</a>
+    {% endif %}
+
+    <!-- Показываем только текущую страницу и ближайшие к ней, чтобы список не тянулся и не захламлял страницу -->
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+            <a>{{ num }}</a>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    <!-- Если есть следующая страница, то даём ссылку на неё и на самую последнюю страницу -->
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">>>></a>
+        <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+    {% endif %}
+
+{% endif %}
+
+
+
+{% endblock content %}
